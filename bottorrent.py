@@ -30,8 +30,11 @@ Instalación:
 --> sudo python3 get-pip.py
 5: Instalar telethon --> sudo python3 -m pip install telethon
 6: Instalar cryptg --> sudo python3 -m pip install cryptg
-7: Copiar BOT.torrent.py, en nuestro NAS y editar las variables propias DE CADA USUARIO. 
-8: Ejecutar BOT de forma interactiva --> python3 -u BOT.torrent.py (Por supuesto, se puede arrancar, también en background y de formar automatizada)
+7: Copiar BOT.torrent.py, en nuestro NAS.
+8: Editar las variables propias DE CADA USUARIO.
+--> cp enviroment.samples .env
+--> nvim .evn
+9: Ejecutar BOT de forma interactiva --> python3 -u BOT.torrent.py (Por supuesto, se puede arrancar, también en background y de formar automatizada)
 A disfrutar ;-)
 
 DekkaR - 2021
@@ -48,6 +51,7 @@ import sys
 import time
 import asyncio
 import cryptg
+from dotenv import load_dotenv
 # Imports Telethon
 from telethon import TelegramClient, events
 from telethon.tl import types
@@ -69,6 +73,7 @@ logger.setLevel(logging.DEBUG)
 # This is a helper method to access environment variables or
 # prompt the user to type them in the terminal if missing.
 def get_env(name, message, cast=str):
+    load_dotenv()
     if name in os.environ:
         print("os.environ[name]",name,os.environ[name])
         return os.environ[name]
