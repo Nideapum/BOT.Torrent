@@ -92,8 +92,10 @@ api_hash = get_env('TG_API_HASH', 'Enter your API hash: ')
 bot_token = get_env('TG_BOT_TOKEN', 'Enter your Telegram BOT token: ')
 TG_AUTHORIZED_USER_ID = get_env('TG_AUTHORIZED_USER_ID', 'Enter your Telegram BOT token: ')
 download_path = get_env('TG_DOWNLOAD_PATH', 'Enter full path to downloads directory: ')
-
 download_path_torrent = os.getenv('TG_WATCH_PATH', "/var/watch") # Directorio bajo vigilancia de DSDownload u otro.
+# Descargar cada fichero en directorios separados, por defecto NO.
+DIR_ORGANIZE = get_env('DIR_ORGANIZE', 'Organize download files? (y/n or s/n): ')
+DIR_ORGANIZE = 'N' if not DIR_ORGANIZE else DIR_ORGANIZE
 
 logger.info('TG_API_ID: %s',api_id)
 logger.info('TG_API_HASH: %s',api_hash)
@@ -120,10 +122,6 @@ maximum_seconds_per_download = int(os.environ.get('TG_DL_TIMEOUT',3600))
 tmp_path = os.path.join(download_path,'tmp')
 
 os.makedirs(tmp_path, exist_ok = True)
-os.makedirs(os.path.join(download_path,'completed'), exist_ok = True)
-os.makedirs(os.path.join(download_path,'mp3'), exist_ok = True)
-os.makedirs(os.path.join(download_path,'pdf'), exist_ok = True)
-os.makedirs(os.path.join(download_path,'torrent'), exist_ok = True)
 
 async def worker(name):
 	while True:
@@ -162,22 +160,30 @@ async def worker(name):
 			end_time = time.strftime('%d/%m/%Y %H:%M:%S', time.localtime())
 			end_time_short = time.strftime('%H:%M', time.localtime())
 			filename = os.path.split(download_result)[1]
-			final_path = os.path.join(download_path,"completed", filename)
-			# Ficheros .mp3 y .flac
-			if filename.endswith('.mp3') or filename.endswith('.flac'): final_path = os.path.join(download_path,"mp3", filename)
-			# Ficheros .pdf y .cbr
-			if filename.endswith('.pdf') or filename.endswith('.cbr'): final_path = os.path.join(download_path,"pdf", filename)
-			# Ficheros .jpg
-			if filename.endswith('.jpg'): 
-				os.makedirs(os.path.join(download_path,'jpg'), exist_ok = True)
-				final_path = os.path.join(download_path,"jpg", filename)
-			# Ficheros .torrent
-			if filename.endswith('.torrent'): final_path = os.path.join(download_path_torrent, filename)
+			if DIR_ORGANIZE.upper() in ['N','NO']:
+				final_path = os.path.join(download_path, filename)
+			else:
+				final_path = os.path.join(download_path,"completed", filename)
+				# Ficheros .mp3 y .flac
+				if filename.endswith('.mp3') or filename.endswith('.flac'):
+					os.makedirs(os.path.join(download_path,'mp3'), exist_ok = True)
+					final_path = os.path.join(download_path,"mp3", filename)
+				# Ficheros .pdf y .cbr
+				if filename.endswith('.pdf') or filename.endswith('.cbr'):
+					os.makedirs(os.path.join(download_path,'pdf'), exist_ok = True)
+					final_path = os.path.join(download_path,"pdf", filename)
+				# Ficheros .jpg
+				if filename.endswith('.jpg'):
+					os.makedirs(os.path.join(download_path,'jpg'), exist_ok = True)
+					final_path = os.path.join(download_path,"jpg", filename)
+				# Ficheros .torrent
+				if filename.endswith('.torrent'):
+					os.makedirs(os.path.join(download_path,'torrent'), exist_ok = True)
+					final_path = os.path.join(download_path_torrent, filename)
 			######
 			logger.info("RENAME/MOVE [%s] [%s]" % (download_result, final_path) )
 			shutil.move(download_result, final_path)
-			######
-			mensaje = '[%s] Descarga terminada %s' % (file_name, end_time)
+			###### mensaje = '[%s] Descarga terminada %s' % (file_name, end_time)
 			logger.info(mensaje )
 			await message.edit('Descarga %s terminada %s' % (file_name,end_time_short))
 		except asyncio.TimeoutError:
@@ -227,7 +233,7 @@ async def handler(update):
 			message = await update.reply(INSTALACION)
 			await queue.put([update, message])
 		else: 
-			time.sleep(2)
+			#time.sleep(2)
 			message = await update.reply('Eco del BOT: ' + update.message.message)
 			await queue.put([update, message])
 			print('Eco del BOT: ' + update.message.message)
